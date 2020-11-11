@@ -3,7 +3,6 @@ from pydantic import BaseModel
 import uvicorn
 
 from datetime import datetime
-import jwt
 import sqlite3
 
 class Address(BaseModel):
@@ -20,8 +19,8 @@ app = FastAPI()
 @app.post("/user/create", status_code=201)
 async def create_user(user: User):
 	# Create user
-	query = 'INSERT INTO user VALUES (?,?)'
-	db.execute(query, [user.user_id, user.created_at])
+	query = 'INSERT INTO user (UserId) VALUES (?)'
+	db.execute(query, [user.user_id])
 
 	query2 = 'INSERT INTO address (BorgerUserId, IsValid) VALUES (?,?)'
 	db.execute(query2, [user.user_id, 1])
@@ -67,7 +66,7 @@ async def delete_user(user_id: id):
 
 # Address CRUD endpoints
 @app.post("/address/create/{borger_id}", status_code=201)
-async def create_address(borger_user_id: borger_id):
+async def create_address(borger_user_id: borger_id, address: Address):
 	# Cant create address without user.
 	queryFind = 'SELECT * user WHERE Id = ?'
 	res = db.execute(queryFind, [borger_user_id])
@@ -75,15 +74,15 @@ async def create_address(borger_user_id: borger_id):
 	if(len(res.fetchall()) > 0)
 	{
 		# Create Address
-		query = 'INSERT INTO Address VALUES (?,?,?,1)'
-		db.execute(query,[adress.address_id], borger_user_id, [address.created_at])
+		query = 'INSERT INTO Address (borger_id, IsValid) VALUES (?,1)'
+		db.execute(query,[borger_user_id])
 	
 		#If address exists, set old isvalid to false
 		query2 = 'UPDATE * SET IsValid = false WHERE BorgerUserId = ?'
 		db.execute(query2, borger_user_id)
 		db.commit()
 	}
-	
+
 	return ""
 
 @app.get("/address/read/{id}", status_code=200)

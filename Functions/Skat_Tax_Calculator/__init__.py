@@ -12,4 +12,3 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         tax_percentage = 0.10
         tax_money = float(amount) * tax_percentage
         return func.HttpResponse(status_code=200, body=json.dumps({"tax_money": tax_money}))
-        
