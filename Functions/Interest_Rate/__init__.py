@@ -1,4 +1,5 @@
 import azure.functions as func
+import json
 
 #Interest Rate Function
 def main(req: func.HttpRequest) -> func.HttpResponse:
