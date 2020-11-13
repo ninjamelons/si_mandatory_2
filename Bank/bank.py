@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import uvicorn
 
 import requests
+import json
 from datetime import datetime
 import sqlite3
 
@@ -99,9 +100,9 @@ class Deposit(BaseModel):
 async def deposit_amount(deposit: Deposit):
 	if ((deposit.Amount == 0) | (deposit.Amount < 0)):
 		raise HTTPException(status_code=422, detail='Deposit needs to be greater than 0')
-	interest_added = deposit.Amount	#CALL AZURE FUNCTION SOMEHOW
-
-	#response = requests.get("localhost:7073/Interest_Rate")
+	
+	depositReq = json.dumps({"amount": deposit.Amount})
+	interest_added = json.loads(requests.post("http://localhost:7071/api/Interest_Rate", data=depositReq).text)["interest"]
 
 	query = """INSERT INTO Deposit (BankUserId, Amount) VALUES (?,?)"""
 	db.execute(query, [deposit.BankUserId, interest_added])
@@ -127,8 +128,8 @@ async def create_loan(loan: Loan):
 
 	account = c.fetchone()
 	
-	return_code = 0#CALL AZURE FUNCTION SOMEHOW
-	#response = requests.get("localhost:7073/Loan_Algorithm")
+	depositReq = json.dumps({"amount": account.Ammount, "loan": loan.Amount})
+	return_code = requests.post("http://localhost:7071/api/Loan_Algorithm", data=depositReq).status_code
 
 	if return_code == 200:
 		query2 = """INSERT INTO Loan () VALUES ()"""
