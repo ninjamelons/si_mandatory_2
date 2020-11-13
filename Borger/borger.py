@@ -28,7 +28,7 @@ async def create_user(user: User):
 	db.commit()
 
 @app.get("/user/read/{user_id}", status_code=200)
-async def read_user(user_id: id):
+async def read_user(user_id: int):
 	#Read from one user with id
 	query = 'SELECT * FROM user WHERE UserId = ?'
 	select = db.execute(query, [user_id])
@@ -57,7 +57,7 @@ async def read_users():
 	#return ""
 
 @app.delete("/user/delete/{id}", status_code=200)
-async def delete_user(user_id: id):	
+async def delete_user(user_id: int):	
 	query = 'DELETE * FROM user WHERE Id = ?'
 	db.execute(query, [user_id])
 	db.commit()
@@ -66,13 +66,12 @@ async def delete_user(user_id: id):
 
 # Address CRUD endpoints
 @app.post("/address/create/{borger_id}", status_code=201)
-async def create_address(borger_user_id: borger_id, address: Address):
+async def create_address(borger_user_id: int, address: Address):
 	# Cant create address without user.
 	queryFind = 'SELECT * user WHERE Id = ?'
 	res = db.execute(queryFind, [borger_user_id])
 
-	if(len(res.fetchall()) > 0)
-	{
+	if(len(res.fetchall()) > 0):
 		# Create Address
 		query = 'INSERT INTO Address (borger_id, IsValid) VALUES (?,1)'
 		db.execute(query,[borger_user_id])
@@ -81,12 +80,10 @@ async def create_address(borger_user_id: borger_id, address: Address):
 		query2 = 'UPDATE * SET IsValid = false WHERE BorgerUserId = ?'
 		db.execute(query2, borger_user_id)
 		db.commit()
-	}
-
-	return ""
+	return 
 
 @app.get("/address/read/{id}", status_code=200)
-async def read_address(address_id: id):
+async def read_address(address_id: int):
 	#Read from one address with id
 	query = 'SELECT * FROM address WHERE Id = ?'
 	select = db.execute(query, [address_id])
@@ -116,7 +113,7 @@ async def read_allAddress():
 #	return ""
 
 @app.delete("/address/delete/{id}", status_code=200)
-async def delete_address(address_id: id):
+async def delete_address(address_id: int):
 	query = 'DELETE * FROM address WHERE Id = ?'
 	db.execute(query, [address_id])
 	db.commit()
