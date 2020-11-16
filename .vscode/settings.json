@@ -1,5 +1,4 @@
 {
-    "python.pythonPath": "venv\\Scripts\\python.exe",
     "azureFunctions.deploySubpath": "Functions",
     "azureFunctions.scmDoBuildDuringDeployment": true,
     "azureFunctions.projectLanguage": "Python",
