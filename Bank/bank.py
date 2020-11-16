@@ -186,7 +186,7 @@ class Withdraw(BaseModel):
 
 ## The body of that request should contain an amount and a UserId(Not BankUserId, not SkatUserId)
 ## Subtract (if possible) the amount from that users account. Throw an error otherwise.
-@app.get("withdrawal-money", status_code=200)
+@app.get("/withdrawal-money", status_code=200)
 async def withdraw_money(withdrawModel: Withdraw):
 	query = 'SELECT Amount FROM Account WHERE Id = ?'
 	selectAccountAmount = db.execute(query, withdrawModel.UserId)
@@ -197,7 +197,6 @@ async def withdraw_money(withdrawModel: Withdraw):
 	else:
 		query2 = 'UPDATE Account SET amount = ? WHERE Id = ?'
 		db.execute(query2, [selectAccountAmount.fetchone()['Amount'] - withdrawModel.Amount, withdrawModel.UserId])
-
 
 #Start server with uvicorn
 if __name__ == "__main__":
