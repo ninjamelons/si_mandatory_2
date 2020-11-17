@@ -12,7 +12,7 @@ class Address(BaseModel):
 class User(BaseModel):
 	user_id: int
 
-db = sqlite3.connect('borger.sqlite')
+db = sqlite3.connect('./Borger/borger.sqlite')
 app = FastAPI()
 
 # User CRUD endpoints
@@ -121,4 +121,5 @@ async def delete_address(address_id: int):
 
 #Start server with uvicorn
 if __name__ == "__main__":
+	print("Borger Server")
 	uvicorn.run(app, host="127.0.0.1", port=5004, log_level="info")

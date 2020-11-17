@@ -1,12 +1,42 @@
 {
-    "version": "0.2.0",
     "configurations": [
         {
-            "name": "Attach to Python Functions",
+            "name": "Bank",
             "type": "python",
-            "request": "attach",
-            "port": 9091,
-            "preLaunchTask": "func: host start"
+            "request": "launch",
+            "program": "${workspaceFolder}/Bank/bank.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Borger",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/Borger/borger.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Skat",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/Skat/skat.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Functions",
+            "type": "dotnet",
+
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Compound",
+            "configurations": [
+                "Bank",
+                "Borger",
+                "Skat",
+                "Functions",
+                "Gateway"
+            ]
         }
     ]
 }

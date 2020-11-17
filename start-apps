@@ -1,0 +1,7 @@
+sqlite3 < create_tables.sql
+
+alacritty -e dotnet run --project ./Gateway/Gateway.API/ &
+alacritty -e func start --script-root ./Functions &
+alacritty -e python ./Skat/skat.py &
+alacritty -e python ./Bank/bank.py &
+alacritty -e python ./Borger/borger.py

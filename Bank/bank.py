@@ -27,7 +27,7 @@ class Account(BaseModel):
 	InterestRate : float
 	Amount : int
 
-db = sqlite3.connect('bank.sqlite')
+db = sqlite3.connect('./Bank/bank.sqlite')
 app = FastAPI()
 
 # User CRUD endpoints
@@ -200,4 +200,5 @@ async def withdraw_money(withdrawModel: Withdraw):
 
 #Start server with uvicorn
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=5003, log_level="info")
+	print("Bank Server")
+	uvicorn.run(app, host="127.0.0.1", port=5003, log_level="info")
