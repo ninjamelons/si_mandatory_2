@@ -1,4 +1,6 @@
-sqlite3 < create_tables.sql
+sqlite3 ./Bank/bank.sqlite < ./Bank/bank.sql
+sqlite3 ./Borger/borger.sqlite < ./Borger/borger.sql
+sqlite3 ./Skat/skat.sqlite < ./Skat/skat.sql
 
 alacritty -e dotnet run --project ./Gateway/Gateway.API/ &
 alacritty -e func start --script-root ./Functions &
