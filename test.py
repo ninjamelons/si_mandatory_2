@@ -82,7 +82,7 @@ class skat_test:
             "startDate": startDate,
             "endDate": endDate
         }
-        response = requests.post(self.url + "/SkatYear/create", data=json.dumps(obj))
+        response = requests.post(self.url + "/SkatYear/create", data=json.dumps(obj, default=str))
         print(response.text)
 
     def pay_taxes(self, uid, amount):
