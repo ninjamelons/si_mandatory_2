@@ -10,7 +10,7 @@ class SkatUser(BaseModel):
 	id : int
 	Userid: int
 
-db = sqlite3.connect('skat.sqlite')
+db = sqlite3.connect('./Skat/skat.sqlite')
 app = FastAPI()
 
 # SkatUser CRUD endpoints

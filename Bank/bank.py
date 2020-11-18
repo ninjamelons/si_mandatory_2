@@ -129,7 +129,6 @@ async def create_loan(loan: Loan):
 	db.commit()
 
 	account = c.fetchone()
-	print(account)
 	
 	depositReq = json.dumps({"amount": account[0], "loan": loan.Amount})
 	return_code = requests.post("http://localhost:7071/api/Loan_Algorithm", data=depositReq).status_code
@@ -144,16 +143,16 @@ async def create_loan(loan: Loan):
 
 @app.post("/pay-loan/{bankUserId}", status_code=200)
 async def pay_loan(uid: int):
-	query = """SELECT (Loan.Amount as LoanAmount, Account.Amount as AccAmount)
+	query = """SELECT Loan.Amount AS LoanAmount, Account.Amount AS AccAmount
 				FROM Loan 
 				INNER JOIN Account
 				ON Loan.BankUserId = Account.BankUserId
-				WHERE Loan.BankUserId = '?';"""
-	c = db.execute(query, [uid])
+				WHERE Loan.BankUserId = ?;"""
+	loanValues = db.execute(query, [uid]).fetchone()
 	db.commit()
 
-	loanAmount = c.fetchone()['LoanAmount']
-	accAmount = c.fetchone()['Amount']
+	loanAmount = loanValues[0]
+	accAmount = loanValues[1]
 	
 	if loanAmount > accAmount:
 		raise HTTPException(status_code=422, detail="Loan greater than account amount")
@@ -161,12 +160,12 @@ async def pay_loan(uid: int):
 		accAmount -= loanAmount
 		query2 = """UPDATE Loan
 					SET Amount = 0
-					WHERE BankUserId = '?';"""
+					WHERE BankUserId = ?;"""
 		db.execute(query2, [uid])
 
 		query3 = """UPDATE Account
-					SET Amount = '?'
-					WHERE BankUserId = '?';"""
+					SET Amount = ?
+					WHERE BankUserId = ?;"""
 		db.execute(query3, [accAmount, uid])
 
 		db.commit()
@@ -187,17 +186,17 @@ async def list_loans(uid: int):
 
 ## The body of that request should contain an amount and a UserId(Not BankUserId, not SkatUserId)
 ## Subtract (if possible) the amount from that users account. Throw an error otherwise.
-@app.get("/withdrawal-money", status_code=200)
+@app.post("/withdrawal-money", status_code=200)
 async def withdraw_money(withdrawModel: Withdraw):
 	query = 'SELECT Amount FROM Account WHERE Id = ?'
-	selectAccountAmount = db.execute(query, withdrawModel.UserId)
+	selectAccountAmount = db.execute(query, withdrawModel.UserId).fetchone()
 
-	if (withdrawModel.Amount > selectAccountAmount.fetchone()['Amount']):
+	if (withdrawModel.Amount > selectAccountAmount[0]):
 		raise HTTPException(status_code=422, detail="withdraw amount is greater than account amount")
 	
 	else:
 		query2 = 'UPDATE Account SET amount = ? WHERE Id = ?'
-		db.execute(query2, [selectAccountAmount.fetchone()['Amount'] - withdrawModel.Amount, withdrawModel.UserId])
+		db.execute(query2, [selectAccountAmount[0] - withdrawModel.Amount, withdrawModel.UserId])
 		db.commit()
 	return "Withdraw: " + str(withdrawModel.Amount)
 
