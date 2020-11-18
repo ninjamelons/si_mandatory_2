@@ -203,5 +203,4 @@ async def withdraw_money(withdrawModel: Withdraw):
 
 #Start server with uvicorn
 if __name__ == "__main__":
-	print("Bank Server")
-	uvicorn.run(app, host="127.0.0.1", port=5003, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=5003, log_level="info")

@@ -10,7 +10,7 @@ class SkatUser(BaseModel):
 	id : int
 	Userid: int
 
-db = sqlite3.connect('./Skat/skat.sqlite')
+db = sqlite3.connect('skat.sqlite')
 app = FastAPI()
 
 # SkatUser CRUD endpoints
@@ -149,5 +149,4 @@ async def pay_taxes(tax: Tax):
 
 #Start server with uvicorn
 if __name__ == "__main__":
-	print("Skat Server")
-	uvicorn.run(app, host="127.0.0.1", port=5002, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=5002, log_level="info")
