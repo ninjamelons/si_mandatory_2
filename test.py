@@ -61,9 +61,7 @@ class skat_test:
     def create_skat_user(self, UserId):
         print("creating a SkatUser")
         obj = {
-            "SkatUser":{
-                "UserId": UserId
-            }
+            "Userid": UserId
         }
         response = requests.post(self.url + "/SkatUser/create", data=json.dumps(obj))
         print(response.text)

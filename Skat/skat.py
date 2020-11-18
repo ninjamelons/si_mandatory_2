@@ -8,7 +8,7 @@ import sqlite3
 import json
 
 class SkatUser(BaseModel):
-	Userid: int
+	UserId: int
 
 class SkatYear(BaseModel):
 	label : str
@@ -27,7 +27,7 @@ app = FastAPI()
 async def create_SkatUser(skatUser: SkatUser):
 	# Create SkatUser
 	query = 'INSERT INTO SkatUser (UserId, IsActive) VALUES (?,?)'
-	db.execute(query, [skatUser.Userid, 1])
+	db.execute(query, [skatUser.UserId, 1])
 
 	db.commit()  
 	return "The skat user was created" 
@@ -54,14 +54,14 @@ async def read_skatUsers():
 	return people
 
 @app.put("/SkatUser/update", status_code=200)
-async def update_skatUser(setActive: int, userId: int):
+async def update_skatUser(setActive: int, UserId: int):
 	#check if the address exist
 	query = 'SELECT * FROM SkatUser WHERE UserId = ?'
-	select = db.execute(query, [userId.id])
+	select = db.execute(query, [UserId.id])
 
-	if(select.fetchone().id == userId.id):
+	if(select.fetchone().id == UserId.id):
 		query2 = 'UPDATE SkatUser SET IsActive = ? WHERE UserId = ?'
-		db.execute(query2, [setActive, userId])
+		db.execute(query2, [setActive, UserId])
 		db.commit()
 		return "The update has been completed"
 	else:
@@ -134,13 +134,13 @@ async def delete_skatYear(skatYear_id: int):
 
 @app.post("/pay-taxes", status_code=200)
 async def pay_taxes(tax: Tax):
-	#Check if user paid taxes (if SkatUserYear.Amount > 0) ???? Why not IsPaid == true??
+	#Check if user paid taxes (if SkatUserYear.Amount > 0) ? Why not IsPaid == true?
 	#Call Tax Calculator - SkatUserYear.Amount = response.sum & IsPaid = true
 	#Call BankAPI/subtractMoneyFromAccount - Body: UserId, Amount
 
 	query = "SELECT Amount FROM SkatUserYear WHERE UserId = ? ORDER BY Id DESC;" #Order by DESC to get the latest entry
 	c = db.execute(query, [tax.UserId])
-	db.commit()
+	
 	skatuseryear = c.fetchone() #Fetch latest row
 
 	if skatuseryear[0] <= 0:
