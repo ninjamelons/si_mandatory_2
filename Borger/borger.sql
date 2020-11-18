@@ -1,4 +1,7 @@
-CREATE TABLE [user](
+DROP TABLE if EXISTS borgerUser;
+DROP TABLE if EXISTS address; 
+
+CREATE TABLE [borgerUser](
     [Id] INTEGER PRIMARY KEY AUTOINCREMENT,
     [UserId] INTEGER NOT NULL,
     [CreatedAt] TEXT DEFAULT CURRENT_TIMESTAMP
@@ -10,5 +13,5 @@ CREATE TABLE [address] (
     [Address] TEXT,
     [CreatedAt] TEXT DEFAULT CURRENT_TIMESTAMP,
     [IsValid] INTEGER DEFAULT 1,
-    FOREIGN KEY ([BorgerUserId]) REFERENCES [user](Id) ON DELETE CASCADE
+    FOREIGN KEY ([BorgerUserId]) REFERENCES [borgerUser](Id) ON DELETE CASCADE
 );
