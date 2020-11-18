@@ -148,12 +148,12 @@ async def pay_taxes(tax: Tax):
 		response = requests.post("http://localhost:7071/api/Skat_Tax_Calculator", data=json.dumps(obj))
 		if response.status_code == 200:
 			query2 = "UPDATE SkatUserYear SET Amount = ?, IsPaid = ? WHERE UserId = ?"
-			db.execute(query, [response.tax_money, 1, tax.UserId])
+			db.execute(query2, [(response.json()['tax_money']), 1, tax.UserId])
 			db.commit()
 
-			obj2 = {'UserId': tax.UserId, 'Amount': response.json().tax_money}
+			obj2 = {'UserId': tax.UserId, 'Amount': response.json()['tax_money']}
 			response2 = requests.post("http://localhost:5003/withdrawal-money", data=json.dumps(obj2))
-			return response.tax_money
+			return response.json()['tax_money']
 	return "You have already paid"
 
 #Start server with uvicorn
