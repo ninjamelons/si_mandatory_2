@@ -1,5 +1,8 @@
 import requests
 import json
+from datetime import datetime
+
+#This file contains 3 class to test the different endpoints
 
 baseurl = "http://localhost:5000/api"
 
@@ -50,6 +53,47 @@ class bank_test:
         response = requests.post(self.url + "/pay-loan/" + str(buid))
         print(response.text)
 
+#Test Skat API
+class skat_test:
+    url = baseurl + "/skat"
+    
+    #create a skat user
+    def create_skat_user(self, UserId):
+        print("creating a SkatUser")
+        obj = {
+            "SkatUser":{
+                "UserId": UserId
+            }
+        }
+        response = requests.post(self.url + "/SkatUser/create", data=json.dumps(obj))
+        print(response.text)
+
+    #show a list of skat user
+    def show_list_of_SkatUser(self):
+        print("Here is a list of SkatUser")
+        response = requests.get(self.url + "/SkatUser/readall")
+        print(response.text)
+
+    #Create new skat year and all respective skatuseryears
+    def skat_year(self, label, startDate, endDate):
+        print("Creating SkatYear & SkatUserYears")
+        obj = {
+            "label": label,
+            "startDate": startDate,
+            "endDate": endDate
+        }
+        response = requests.post(self.url + "/SkatYear/create", data=json.dumps(obj))
+        print(response.text)
+
+    def pay_taxes(self, uid, amount):
+        print("Paying taxes :(")
+        obj = {
+            "UserId": uid,
+            "Amount": amount
+        }
+        response = requests.post(self.url + "/pay-taxes", data=json.dumps(obj))
+        print(response.text)
+   
 
 #Test bank application
 bank = bank_test()
@@ -67,3 +111,21 @@ bank.pay_loan(buid)
 #Test borger application
 
 #Test skat application
+skat = skat_test()
+
+UserId1 = 1
+UserId2 = 2
+UserId3 = 3
+
+skat.create_skat_user(UserId1)
+skat.create_skat_user(UserId2)
+skat.create_skat_user(UserId3)
+
+skat.show_list_of_SkatUser()
+
+yearLabel = "2020"
+yearStartDate = datetime.fromisoformat('2020-01-01')
+yearEndDate = datetime.fromisoformat('2020-12-31')
+
+skat.skat_year(yearLabel, yearStartDate, yearEndDate)
+skat.pay_taxes(UserId1, 800)

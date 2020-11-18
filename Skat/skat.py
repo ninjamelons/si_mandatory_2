@@ -8,14 +8,22 @@ import sqlite3
 import json
 
 class SkatUser(BaseModel):
-	id : int
 	Userid: int
+
+class SkatYear(BaseModel):
+	label : str
+	startDate: datetime
+	endDate: datetime
+
+class Tax(BaseModel):
+	UserId: int
+	Amount: int
 
 db = sqlite3.connect('./Skat/skat.sqlite')
 app = FastAPI()
 
 # SkatUser CRUD endpoints
-@app.post("/SkatUser/create", status_code=201)
+@app.post("/SkatUser/create", status_code=201)(
 async def create_SkatUser(skatUser: SkatUser):
 	# Create SkatUser
 	query = 'INSERT INTO SkatUser (UserId, IsActive) VALUES (?,?)'
@@ -67,34 +75,21 @@ async def delete_skatuUser(skatUser_id: int):
 	db.commit()
 	return "The skat user has been deleted"
 
-
-class SkatYear(BaseModel):
-	id : int
-	label : str
-	startDate: datetime
-	endDate: datetime
-
-class SkatUserYear(BaseModel):
-	id : int
-	skatUserId : int
-	userId : int
-	isPaid : int
-	amount : int
-
 # SkatYear CRUD endpoints
 @app.post("/SkatYear/create", status_code=201)
-async def create_SkatYear(skatYear: SkatYear, skatUserYear: SkatUserYear):
+async def create_SkatYear(skatYear: SkatYear):
 	# Create SkatUser
 	query = 'INSERT INTO SkatYear (Label, StartDate, EndDate) VALUES (?,?,?)'
-	db.execute(query, [skatYear.label, skatYear.startDate, skatYear.endDate])
-	db.commit()
+	c = db.execute(query, [skatYear.label, skatYear.startDate, skatYear.endDate])
+	
+	skatYearId = c.lastrowid
 
-	#find id for the new skatYear
-	queryGet = 'SELECT Id FROM SkatYear WHERE Label = ?'
-	find = db.execute(queryGet, [SkatYear.label])
+	query = """SELECT Id FROM SkatUser"""
+	users = db.execute(query)
 
-	query2 = 'INSERT INTO SkatUserYear (SkatUserId, SkatYearId, UserId, isPaid, Amount) VALUES (?,?,?,?,?)'
-	db.execute(query2, [skatUserYear.skatUserId, find.fetchone()[0], skatUserYear.userId, skatUserYear.isPaid, skatUserYear.amount])
+	for row in users:
+		query2 = 'INSERT INTO SkatUserYear (SkatUserId, SkatYearId, isPaid, Amount) VALUES (?,?,?,?,?)'
+		db.execute(query2, [row[0], skatYearId, 0, 0])
 
 	db.commit()  
 	return "The skatYear and SkatUserYear has been created" 
@@ -136,11 +131,6 @@ async def delete_skatYear(skatYear_id: int):
 	db.commit()
 	# Delete corresponding SkatUserYear - Cascade is doin' dis for us
 	return "The skatYear has been deleted"
-
-
-class Tax(BaseModel):
-	UserId: int
-	Amount: int
 
 @app.post("/pay-taxes", status_code=200)
 async def pay_taxes(tax: Tax):
