@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 import uvicorn
 
 import requests
 from datetime import datetime
 import sqlite3
+import json
 
 class SkatUser(BaseModel):
 	id : int
@@ -21,6 +22,7 @@ async def create_SkatUser(skatUser: SkatUser):
 	db.execute(query, [skatUser.Userid, 1])
 
 	db.commit()  
+	return "The skat user was created" 
 
 @app.get("/SkatUser/read/{SkatUser_id}", status_code=200)
 async def read_skatUser(skatUser_id: int):
@@ -28,7 +30,7 @@ async def read_skatUser(skatUser_id: int):
 	query = 'SELECT * FROM SkatUser WHERE Id = ?'
 	select = db.execute(query, [skatUser_id])
 	db.commit()
-	return select
+	return select.fetchone()
 
 @app.get("/SkatUser/readall", status_code=200)
 async def read_skatUsers():
@@ -39,28 +41,38 @@ async def read_skatUsers():
 
 	people = []
 	for row in select:
-		people.append({'Id':row[1], 'IsActive':row[2], 'CreatedAt':row[3]})
+			people.append({'UserId':row[1], 'CreatedAt':row[2], 'IsActive':row[3]})
 
 	return people
 
 @app.put("/SkatUser/update", status_code=200)
-async def update_skatUser(setActive: int):
-	query = 'UPDATE SkatUser SET IsActive = ?'
-	db.execute(query, [setActive])
-	db.commit()
+async def update_skatUser(setActive: int, userId: int):
+	#check if the address exist
+	query = 'SELECT * FROM SkatUser WHERE UserId = ?'
+	select = db.execute(query, [userId.id])
+
+	if(select.fetchone().id == userId.id):
+		query2 = 'UPDATE SkatUser SET IsActive = ? WHERE UserId = ?'
+		db.execute(query2, [setActive, userId])
+		db.commit()
+		return "The update has been completed"
+	else:
+		raise HTTPException(status_code=403, detail="The address does not exist please create one!")
+		return "Wrong ID"
 	
-@app.delete("/skatUser/delete/{id}", status_code=200)
+@app.delete("/skatUser/delete/{skatUse_id}", status_code=200)
 async def delete_skatuUser(skatUser_id: int):	
 	query = 'DELETE * FROM SkatUser WHERE Id = ?'
 	db.execute(query, [skatUser_id])
 	db.commit()
+	return "The skat user has been deleted"
 
 
 class SkatYear(BaseModel):
 	id : int
 	label : str
-	startAt: datetime
-	endAt: datetime
+	startDate: datetime
+	endDate: datetime
 
 class SkatUserYear(BaseModel):
 	id : int
@@ -73,16 +85,19 @@ class SkatUserYear(BaseModel):
 @app.post("/SkatYear/create", status_code=201)
 async def create_SkatYear(skatYear: SkatYear, skatUserYear: SkatUserYear):
 	# Create SkatUser
-	query = 'INSERT INTO SkatYear (Label, StartAt, EndAt) VALUES (?,?,?)'
-	db.execute(query, [skatYear.label, skatYear.startAt, skatYear.endAt])
+	query = 'INSERT INTO SkatYear (Label, StartDate, EndDate) VALUES (?,?,?)'
+	db.execute(query, [skatYear.label, skatYear.startDate, skatYear.endDate])
+	db.commit()
 
+	#find id for the new skatYear
 	queryGet = 'SELECT Id FROM SkatYear WHERE Label = ?'
 	find = db.execute(queryGet, [SkatYear.label])
 
 	query2 = 'INSERT INTO SkatUserYear (SkatUserId, SkatYearId, UserId, isPaid, Amount) VALUES (?,?,?,?,?)'
-	db.execute(query2, [skatUserYear.skatUserId, find.Id, skatUserYear.UserId, skatUserYear.isPaid, skatUserYear.amount])
+	db.execute(query2, [skatUserYear.skatUserId, find.fetchone()[0], skatUserYear.userId, skatUserYear.isPaid, skatUserYear.amount])
 
 	db.commit()  
+	return "The skatYear and SkatUserYear has been created" 
 
 
 @app.get("/SkatYear/read/{SkatYear_id}", status_code=200)
@@ -91,7 +106,7 @@ async def read_skatYear(skatYear_id: int):
 	query = 'SELECT * FROM SkatYear WHERE Id = ?'
 	select = db.execute(query, [skatYear_id])
 	db.commit()
-	return select
+	return select.fetchone()
 
 
 @app.get("/SkatYear/readall", status_code=200)
@@ -103,7 +118,7 @@ async def read_skatYears():
 
 	skatYears = []
 	for row in select:
-		skatYears.append({'Id':row[1],'Label':row[2], 'CreatedAt':row[3], 'ModifiedAt':row[4], 'StartAt':row[5], 'EndAt':row[6]})
+		skatYears.append({'Label':row[1], 'CreatedAt':row[2], 'ModifiedAt':row[3], 'StartAt':row[4], 'EndAt':row[5]})
 
 	return skatYears
 
@@ -112,6 +127,7 @@ async def update_skatYear(label: str, modifiedAt: datetime, id: int):
 	query = 'UPDATE skatYear SET Label = ?, ModifiedAt = ? WHERE Id = ?'
 	db.execute(query, [label, modifiedAt, id])
 	db.commit()
+	return "The skatYear has been updatet"
 
 @app.delete("/skatYear/delete/{id}", status_code=200)
 async def delete_skatYear(skatYear_id: int):	
@@ -119,6 +135,7 @@ async def delete_skatYear(skatYear_id: int):
 	db.execute(query, [skatYear_id])
 	db.commit()
 	# Delete corresponding SkatUserYear - Cascade is doin' dis for us
+	return "The skatYear has been deleted"
 
 
 class Tax(BaseModel):
@@ -131,13 +148,13 @@ async def pay_taxes(tax: Tax):
 	#Call Tax Calculator - SkatUserYear.Amount = response.sum & IsPaid = true
 	#Call BankAPI/subtractMoneyFromAccount - Body: UserId, Amount
 
-	query = "SELECT Amount FROM SkatUserYear WHERE UserId = '?' ORDER BY Id DESC;" #Order by DESC to get the latest entry
+	query = "SELECT Amount FROM SkatUserYear WHERE UserId = ? ORDER BY Id DESC;" #Order by DESC to get the latest entry
 	c = db.execute(query, [tax.UserId])
 	db.commit()
 	skatuseryear = c.fetchone() #Fetch latest row
 
-	if skatuseryear.Amount <= 0:
-		obj = {'amount': skatuseryear.Amount}
+	if skatuseryear[0] <= 0:
+		obj = {'amount': skatuseryear[0]}
 		response = requests.post("http://localhost:7071/api/Skat_Tax_Calculator", data=json.dumps(obj))
 		if response.status_code == 200:
 			query2 = "UPDATE SkatUserYear SET Amount = ?, IsPaid = ? WHERE UserId = ?"
@@ -146,6 +163,8 @@ async def pay_taxes(tax: Tax):
 
 			obj2 = {'UserId': tax.UserId, 'Amount': response.tax_money}
 			response2 = requests.post("http://localhost:5003/withdrawal-money", data=json.dumps(obj2))
+			return response.tax_money
+	return "You have already paid"
 
 #Start server with uvicorn
 if __name__ == "__main__":
