@@ -1,6 +1,5 @@
 DROP TABLE if EXISTS borgerUser;
-DROP TABLE if EXISTS address; 
-DROP TABLE if EXISTS user; 
+DROP TABLE if EXISTS address;
 
 CREATE TABLE [borgerUser](
     [Id] INTEGER PRIMARY KEY AUTOINCREMENT,
