@@ -188,17 +188,20 @@ async def list_loans(uid: int):
 ## Subtract (if possible) the amount from that users account. Throw an error otherwise.
 @app.post("/withdrawal-money", status_code=200)
 async def withdraw_money(withdrawModel: Withdraw):
-	query = 'SELECT Amount FROM Account WHERE Id = ?'
-	selectAccountAmount = db.execute(query, withdrawModel.UserId).fetchone()
+	taxMoney = int(withdrawModel.Amount)
+	UserId = int(withdrawModel.UserId)
 
-	if (withdrawModel.Amount > selectAccountAmount[0]):
+	query = """SELECT Amount FROM Account WHERE Id = ?"""
+	selectAccountAmount = db.execute(query, [UserId]).fetchone()
+
+	if (taxMoney > selectAccountAmount[0]):
 		raise HTTPException(status_code=422, detail="withdraw amount is greater than account amount")
 	
 	else:
 		query2 = 'UPDATE Account SET amount = ? WHERE Id = ?'
-		db.execute(query2, [selectAccountAmount[0] - withdrawModel.Amount, withdrawModel.UserId])
+		db.execute(query2, [selectAccountAmount[0] - taxMoney, UserId])
 		db.commit()
-	return "Withdraw: " + str(withdrawModel.Amount)
+	return "Withdraw: " + str(taxMoney)
 
 #Start server with uvicorn
 if __name__ == "__main__":
