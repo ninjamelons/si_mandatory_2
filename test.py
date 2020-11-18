@@ -61,7 +61,7 @@ class skat_test:
     def create_skat_user(self, UserId):
         print("creating a SkatUser")
         obj = {
-            "Userid": UserId
+            "UserId": UserId
         }
         response = requests.post(self.url + "/SkatUser/create", data=json.dumps(obj))
         print(response.text)
@@ -94,6 +94,7 @@ class skat_test:
    
 
 #Test bank application
+print("********************* STARTING SKAT TEST***********************")
 bank = bank_test()
 
 buid = 0
@@ -109,6 +110,7 @@ bank.pay_loan(buid)
 #Test borger application
 
 #Test skat application
+print("********************* STARTING SKAT TEST***********************")
 skat = skat_test()
 
 UserId1 = 1
