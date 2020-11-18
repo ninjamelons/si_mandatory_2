@@ -141,7 +141,7 @@ async def create_loan(loan: Loan):
 		raise HTTPException(status_code=403, detail="Loan greater than 75% of account amount")
 	return "Loan amount: " + str(loan.Amount)
 
-@app.post("/pay-loan/{bankUserId}", status_code=200)
+@app.post("/pay-loan/{uid}", status_code=200)
 async def pay_loan(uid: int):
 	query = """SELECT Loan.Amount AS LoanAmount, Account.Amount AS AccAmount
 				FROM Loan 
