@@ -14,7 +14,7 @@
             "DownstreamScheme": "http",
             "DownstreamHostandPorts": [{
                 "Host": "localhost",
-                "Port": "5005"
+                "Port": "5003"
             }],
             "UpstreamPathTemplate": "/api/bank/{everything}",
             "UpstreamHttpMethod": ["GET", "POST", "DELETE", "PUT"]
@@ -24,7 +24,7 @@
             "DownstreamScheme": "http",
             "DownstreamHostandPorts": [{
                 "Host": "localhost",
-                "Port": "5006"
+                "Port": "5002"
             }],
             "UpstreamPathTemplate": "/api/skat/{everything}",
             "UpstreamHttpMethod": ["GET", "POST", "DELETE", "PUT"]

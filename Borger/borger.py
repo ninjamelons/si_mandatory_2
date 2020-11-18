@@ -13,7 +13,7 @@ class Address(BaseModel):
 class BorgerUser(BaseModel):
 	user_id: int
 
-db = sqlite3.connect('borger.sqlite')
+db = sqlite3.connect('./Borger/borger.sqlite')
 app = FastAPI()
 
 # BorgerUser CRUD endpoints
