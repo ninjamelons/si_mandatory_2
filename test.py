@@ -3,6 +3,7 @@ import json
 
 baseurl = "http://localhost:5000/api"
 
+#Test Bank API
 class bank_test:
     url = baseurl + "/bank"
 
@@ -22,6 +23,8 @@ class bank_test:
         }
         response = requests.post(self.url + "/bankUser/create", data=json.dumps(obj))
         print(response.text)
+
+    #Deposit amount into created user
     def deposit(self, buid, amount):
         print("Depositing amount")
         obj = {
@@ -30,6 +33,8 @@ class bank_test:
         }
         response = requests.post(self.url + "/add-deposit", data=json.dumps(obj))
         print(response.text)
+
+    #Create a new loan into created user
     def create_loan(self, buid, amount):
         print("Creating loan")
         obj = {
@@ -38,12 +43,15 @@ class bank_test:
         }
         response = requests.post(self.url + "/create-loan", data=json.dumps(obj))
         print(response.text)
+
+    #Pay created loan
     def pay_loan(self, buid):
         print("Paying loan")
         response = requests.post(self.url + "/pay-loan/" + str(buid))
         print(response.text)
 
-#Test banking application
+
+#Test bank application
 bank = bank_test()
 
 buid = 0
@@ -55,3 +63,7 @@ bank.create_user(buid, accountAmount)
 bank.deposit(buid, depositAmount)
 bank.create_loan(buid, loanAmount)
 bank.pay_loan(buid)
+
+#Test borger application
+
+#Test skat application
