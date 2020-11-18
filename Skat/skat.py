@@ -23,7 +23,7 @@ db = sqlite3.connect('./Skat/skat.sqlite')
 app = FastAPI()
 
 # SkatUser CRUD endpoints
-@app.post("/SkatUser/create", status_code=201)(
+@app.post("/SkatUser/create", status_code=201)
 async def create_SkatUser(skatUser: SkatUser):
 	# Create SkatUser
 	query = 'INSERT INTO SkatUser (UserId, IsActive) VALUES (?,?)'
