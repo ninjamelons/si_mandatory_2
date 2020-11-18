@@ -1,7 +1,23 @@
 # si_mandatory_2
 
-In this mandatory for Software Integration, we have made 3 python sever and 2 Functions Service (Faas)
+In this mandatory for Software Integration we are working with "gateways"
 
--- Bank
--- Skat
---Borger.dk
+## Discription:
+- Has 3 python sever 
+- Has 2 Functions Service
+- A test file "test.py"
+
+## Functionality:
+**Borger**
+- CRUD
+
+**Bank**
+- CRUD
+- Deposit
+- Withdraw
+- Loan
+- Interest-Rate
+
+**Skat**
+- CRUD 
+- Tax
