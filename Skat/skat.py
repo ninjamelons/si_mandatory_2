@@ -84,12 +84,12 @@ async def create_SkatYear(skatYear: SkatYear):
 	
 	skatYearId = c.lastrowid
 
-	query = """SELECT Id FROM SkatUser"""
+	query = """SELECT Id, UserId FROM SkatUser"""
 	users = db.execute(query)
 
 	for row in users:
-		query2 = 'INSERT INTO SkatUserYear (SkatUserId, SkatYearId, isPaid, Amount) VALUES (?,?,?,?,?)'
-		db.execute(query2, [row[0], skatYearId, 0, 0])
+		query2 = 'INSERT INTO SkatUserYear (SkatUserId, SkatYearId, UserId, isPaid, Amount) VALUES (?,?,?,?,?)'
+		db.execute(query2, [row[0], skatYearId, row[1], 0, 0])
 
 	db.commit()  
 	return "The skatYear and SkatUserYear has been created" 
