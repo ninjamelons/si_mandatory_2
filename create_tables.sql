@@ -1,3 +1,4 @@
+/************* SKAT DATABASE ***************/
 .open ./Skat/skat.sqlite
 
 DROP TABLE IF EXISTS SkatUser;
@@ -30,10 +31,12 @@ CREATE TABLE [SkatUserYear](
     FOREIGN KEY ([SkatYearId]) REFERENCES [SkatYear](Id) ON DELETE CASCADE
 );
 
+/************ BANK DATABASE ***********/
 .open ./Bank/bank.sqlite
 DROP TABLE IF EXISTS BankUser;
 CREATE TABLE [BankUser](
     [Id] INTEGER  PRIMARY KEY AUTOINCREMENT,
+    [UserId] INTEGER NOT NULL,
     [CreatedAt] TEXT DEFAULT CURRENT_TIMESTAMP,
     [ModifiedAt] TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -41,16 +44,15 @@ CREATE TABLE [BankUser](
 DROP TABLE IF EXISTS Account;
 CREATE TABLE [Account](
     [Id] INTEGER PRIMARY KEY AUTOINCREMENT,
+    [BankUserId] INTEGER NOT NULL,
     [AccountNo] INTEGER NOT NULL,
     [IsStudent] INTEGER DEFAULT 0,
     [CreatedAt] TEXT DEFAULT CURRENT_TIMESTAMP,
     [ModifiedAt] TEXT DEFAULT CURRENT_TIMESTAMP,
     [InterestRate] INTEGER DEFAULT 0,
-    [Amount] INTEGER DEFAULT 0
+    [Amount] INTEGER DEFAULT 0,
+    FOREIGN KEY (BankUserId) REFERENCES [BankUser](Id) ON DELETE CASCADE    
 );
-
-ALTER TABLE [BankUser] ADD COLUMN [UserId] INTEGER REFERENCES [Account](Id) DEFERRABLE INITIALLY DEFERRED;
-ALTER TABLE [Account] ADD COLUMN [BankUserId] INTEGER REFERENCES [BankUser](Id) DEFERRABLE INITIALLY DEFERRED;
 
 DROP TABLE IF EXISTS Deposit;
 CREATE TABLE [Deposit](
@@ -71,6 +73,7 @@ CREATE TABLE [Loan](
     FOREIGN KEY (BankUserId) REFERENCES [BankUser](Id) ON DELETE CASCADE
 );
 
+/*********** BORGER DATABASE ************/
 .open ./Borger/borger.sqlite
 DROP TABLE IF EXISTS user;
 CREATE TABLE [user](
