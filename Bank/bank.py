@@ -54,20 +54,20 @@ async def create_bankUser(bankUser: BankUser, account: Account):
 async def read_user(bankUser_id: int):
 	#Read from one user with id
 	query = 'SELECT * FROM BankUser WHERE Id = ?'
-	select = db.execute(query, [bankUser_id])
-	db.commit()
-	return select.fetchone()
+	select = db.execute(query, [bankUser_id]).fetchone()
+	
+	BankUser = {select[0], select[1], select[2], select[3]}
+	return BankUser
 
 @app.get("/bankUser/readall", status_code=200)
 async def read_users():
 	#Read from all user
 	query = 'SELECT * FROM BankUser'
 	select = db.execute(query)
-	db.commit()
 
 	bankusers = []
 	for row in select:
-		bankusers.append({'Id':row[1], 'CreatedAt':row[2], 'ModifiedAt':row[3]})
+		bankusers.append({'Id':row[0], 'UserId':row[1],'CreatedAt':row[2], 'ModifiedAt':row[3]})
 
 	return bankusers
 

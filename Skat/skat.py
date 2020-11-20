@@ -99,9 +99,10 @@ async def create_SkatYear(skatYear: SkatYear):
 async def read_skatYear(skatYear_id: int):
 	#Read from one user with id
 	query = 'SELECT * FROM SkatYear WHERE Id = ?'
-	select = db.execute(query, [skatYear_id])
-	db.commit()
-	return select.fetchone()
+	select = db.execute(query, [skatYear_id]).fetchone()
+	
+	skatYear ={select[0], select[1], select[2], select[3], select[4], select[5]}
+	return skatYear
 
 
 @app.get("/SkatYear/readall", status_code=200)
@@ -109,11 +110,11 @@ async def read_skatYears():
 	#Read from all user
 	query = 'SELECT * FROM SkatYear'
 	select = db.execute(query)
-	db.commit()
+	
 
 	skatYears = []
 	for row in select:
-		skatYears.append({'Label':row[1], 'CreatedAt':row[2], 'ModifiedAt':row[3], 'StartAt':row[4], 'EndAt':row[5]})
+		skatYears.append({'Id':row[0], 'Label':row[1], 'CreatedAt':row[2], 'ModifiedAt':row[3], 'StartAt':row[4], 'EndAt':row[5]})
 
 	return skatYears
 

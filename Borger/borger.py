@@ -32,9 +32,10 @@ async def create_borgerUser(borgerUser: BorgerUser):
 async def read_BorgerUser(user_id: int):
 	#Read from one user with id
 	query = 'SELECT * FROM BorgerUser WHERE UserId = ?'
-	select = db.execute(query, [user_id])
-	db.commit()
-	return select.fetchone()
+	select = db.execute(query, [user_id]).fetchone()
+	
+	borgerUser = {select[0], select[1], select[2]}
+	return borgerUser
 
 @app.get("/borgerUser/readall", status_code=200)
 async def read_users():
@@ -45,7 +46,7 @@ async def read_users():
 
 	people = []
 	for row in select:
-		people.append({'UserId':row[1], 'CreatedAt':row[2]})
+		people.append({'Id':row[0], 'UserId':row[1], 'CreatedAt':row[2]})
 
 	return people
 
@@ -90,20 +91,21 @@ async def create_address(address: Address):
 async def read_address(address_id: int):
 	#Read from one address with id
 	query = 'SELECT * FROM address WHERE Id = ?'
-	select = db.execute(query, [address_id])
-	db.commit()
-	return select.fetchone()
+	select = db.execute(query, [address_id]).fetchone()
+	
+	address = {select[0], select[1], select[2], select[3], select[4]}
+	return address
 
 @app.get("/address/readAll", status_code=200)
 async def read_allAddress():
 	#Read from all address
 	query = 'SELECT * FROM address'
 	select = db.execute(query)
-	db.commit()
+
 
 	addresslist = []
 	for row in select:
-		addresslist.append({'BorgerUserId':row[1], 'address':row[2], 'CreatedAt':row[3], 'IsValid':row[4]})
+		addresslist.append({'Id':row[0], 'BorgerUserId':row[1], 'address':row[2], 'CreatedAt':row[3], 'IsValid':row[4]})
 
 	return addresslist
 
