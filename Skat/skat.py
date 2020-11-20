@@ -36,20 +36,21 @@ async def create_SkatUser(skatUser: SkatUser):
 async def read_skatUser(skatUser_id: int):
 	#Read from one user with id
 	query = 'SELECT * FROM SkatUser WHERE Id = ?'
-	select = db.execute(query, [skatUser_id])
-	db.commit()
-	return select.fetchone()
+	select = db.execute(query, [skatUser_id]).fetchone()
+	
+	skatUser = {select[0], select[1], select[2], select[3]}
+	return skatUser
 
 @app.get("/SkatUser/readall", status_code=200)
 async def read_skatUsers():
 	#Read from all user
 	query = 'SELECT * FROM SkatUser'
 	select = db.execute(query)
-	db.commit()
+	
 
 	people = []
 	for row in select:
-			people.append({'UserId':row[1], 'CreatedAt':row[2], 'IsActive':row[3]})
+			people.append({'Id':row[0], 'UserId':row[1], 'CreatedAt':row[2], 'IsActive':row[3]})
 
 	return people
 
