@@ -25,7 +25,7 @@ class Account(BaseModel):
 	Amount : int
 
 class Withdraw(BaseModel):
-	UserId: int
+	BankUserId: int
 	Amount : int
 
 db = sqlite3.connect('./Bank/bank.sqlite')
@@ -40,24 +40,53 @@ async def create_bankUser(bankUser: BankUser, account: Account):
 
 	#get the Id from BankUser to the BankUserId 
 	queryGet = 'SELECT * FROM BankUser WHERE UserId = ?'
-	select = db.execute(queryGet, [bankUser.UserId]).fetchone()
+	bu = db.execute(queryGet, [bankUser.UserId]).fetchone()
+	returnBankUser = {
+		'Id':bu[0],
+		'UserId':bu[1],
+		'CreatedAt':bu[2],
+		'ModifiedAt':bu[3]}
 
 	query2 = """INSERT INTO Account 
 				(BankUserId, AccountNo, IsStudent, InterestRate, Amount)
 	            VALUES (?,?,?,?,?)"""
-	db.execute(query2, [bankUser.UserId, account.AccountNo, account.IsStudent, account.InterestRate, account.Amount])
+	accountInsert = db.execute(query2, [bu[0], account.AccountNo, account.IsStudent, account.InterestRate, account.Amount])
+	accountId = accountInsert.lastrowid
+
+	query3 = 'SELECT * FROM Account WHERE Id = ?'
+	acc = db.execute(query3, [accountId]).fetchone()
+	returnAccount = {
+		'Id':acc[0],
+		'BankUserId':acc[1],
+		'AccountNo':acc[2],
+		'IsStudent':acc[3],
+		'CreatedAt':acc[4],
+		'ModifiedAt':acc[5],
+		'InterestRate':acc[6],
+		'Amount':acc[7]
+		}
+	
+	returnUser = {'BankUser':returnBankUser, 'Account':returnAccount}
+
 	db.commit()
 
-	return "Inserted User"
+	return returnUser
 
 @app.get("/bankUser/read/{bankUser_id}", status_code=200)
 async def read_user(bankUser_id: int):
 	#Read from one user with id
 	query = 'SELECT * FROM BankUser WHERE Id = ?'
 	select = db.execute(query, [bankUser_id]).fetchone()
+	if select == None:
+		raise HTTPException(status_code=404, detail='BankUser with Id not found')
+	returnBankUser = {
+		'Id':select[0],
+		'UserId':select[1],
+		'CreatedAt':select[2],
+		'ModifiedAt':select[3]
+		}
 	
-	BankUser = {select[0], select[1], select[2], select[3]}
-	return BankUser
+	return returnBankUser
 
 @app.get("/bankUser/readall", status_code=200)
 async def read_users():
@@ -71,49 +100,103 @@ async def read_users():
 
 	return bankusers
 
-
-@app.delete("/bankUser/delete/{userid}", status_code=200)
-async def delete_user(bankUser_id: int):	
-	query = 'DELETE * FROM BankUser WHERE UserId = ?'
-	db.execute(query, [bankUser_id])
+@app.delete("/bankUser/delete/{bankUser_id}", status_code=200)
+async def delete_user(bankUser_id: int):
+	query = 'SELECT * FROM BankUser WHERE Id = ?'
+	bu = db.execute(query, [bankUser_id]).fetchone()
+	if bu == None:
+		raise HTTPException(status_code=404, detail='BankUser with Id not found')
+	returnBankUser = {
+		'Id':bu[0],
+		'UserId':bu[1],
+		'CreatedAt':bu[2],
+		'ModifiedAt':bu[3]}
+	
+	query2 = 'SELECT * FROM Account WHERE BankUserId = ?'
+	acc = db.execute(query2, [bankUser_id]).fetchone()
+	if acc == None:
+		raise HTTPException(status_code=404, detail='Account with BankUserId not found')
+	returnAccount = {
+		'Id':acc[0],
+		'BankUserId':acc[1],
+		'AccountNo':acc[2],
+		'IsStudent':acc[3],
+		'CreatedAt':acc[4],
+		'ModifiedAt':acc[5],
+		'InterestRate':acc[6],
+		'Amount':acc[7]
+		}
+	
+	query3 = 'DELETE FROM BankUser WHERE Id = ?'
+	query4 = 'DELETE FROM Account WHERE BankUserId = ?'
+	deleteBU = db.execute(query3, [bankUser_id])
+	deleteAcc = db.execute(query4, [bankUser_id])
 	db.commit()
 
+	returnUser = {'BankUser':returnBankUser, 'Account':returnAccount}
+	return returnUser
 
-@app.get("/bankAccount/read/{bankuserid}", status_code=200)
-async def read_account(bankuserid: int):
+@app.get("/bankAccount/read/{bankUser_id}", status_code=200)
+async def read_account(bankUser_id: int):
 	#Read from one user with id
 	query = 'SELECT * FROM Account WHERE BankUserId = ?'
-	select = db.execute(query, [bankuserid])
-	db.commit()
-	return select.fetchone()
+	acc = db.execute(query, [bankUser_id]).fetchone()
+	if acc == None:
+		raise HTTPException(status_code=404, detail='Account with BankUserId not found')
+	returnAccount = {
+		'Id':acc[0],
+		'BankUserId':acc[1],
+		'AccountNo':acc[2],
+		'IsStudent':acc[3],
+		'CreatedAt':acc[4],
+		'ModifiedAt':acc[5],
+		'InterestRate':acc[6],
+		'Amount':acc[7]
+		}
+	
+	return returnAccount
 
 # Bank Functionality
 @app.post("/add-deposit", status_code=200)
 async def deposit_amount(deposit: Deposit):
 	if ((deposit.Amount == 0) | (deposit.Amount < 0)):
 		raise HTTPException(status_code=422, detail='Deposit needs to be greater than 0')
+
+	# Get Account current Amount and InterestRate
+	query = """SELECT Amount, InterestRate FROM Account WHERE BankUserId = ?"""
+	account = db.execute(query, [deposit.BankUserId]).fetchone()
+	if account == None:
+		raise HTTPException(status_code=404, detail='Account with BankUserId not found')
+
+	accAmount = account[0]
+	accInterest = account[1]
 	
-	depositReq = json.dumps({"amount": deposit.Amount})
+	# Calculated deposited amount based on InterestRate
+	depositReq = json.dumps({"amount": deposit.Amount, "interest_rate": accInterest})
 	interest_added = json.loads(requests.post("http://localhost:7071/api/Interest_Rate", data=depositReq).text)["interest"]
 
-	query = """INSERT INTO Deposit (BankUserId, Amount) VALUES (?,?)"""
-	db.execute(query, [deposit.BankUserId, interest_added])
+	# Insert deposited amount into Deposit
+	query2 = """INSERT INTO Deposit (BankUserId, Amount) VALUES (?,?)"""
+	db.execute(query2, [deposit.BankUserId, interest_added])
 
-	query2 = """SELECT Amount FROM Account WHERE BankUserId = ?"""
-	accountAmount = db.execute(query2, [deposit.BankUserId])
-
+	# Update current balance (amount += deposit)
 	query3 = """UPDATE Account
 				SET Amount = ?
 				WHERE BankUserId = ?;"""
-	db.execute(query3, [accountAmount.fetchone()[0] + interest_added, deposit.BankUserId])
+	db.execute(query3, [accAmount + interest_added, deposit.BankUserId])
 	db.commit()
 
-	return "Deposited amount: " + str(interest_added)
+	returnObj = {
+		'BankUserId':deposit.BankUserId,
+		'DepositAmount':interest_added,
+		'CurrentBalance':(accAmount+interest_added)
+		}
+	return returnObj
 
-@app.get("/list-deposits/{bankUserId}", status_code=200)
-async def list_deposits(bankUserId: int):
+@app.get("/list-deposits/{bankUser_id}", status_code=200)
+async def list_deposits(bankUser_id: int):
 	query = """SELECT * FROM Deposit WHERE BankUserId = (?)"""
-	select = db.execute(query, [bankUserId])
+	select = db.execute(query, [bankUser_id])
 	db.commit()
 
 	deposits = []
@@ -122,34 +205,51 @@ async def list_deposits(bankUserId: int):
 
 	return deposits
 
+#Creates a new loan if a 
 @app.post("/create-loan", status_code=200)
 async def create_loan(loan: Loan):
 	query = """SELECT Amount FROM Account WHERE BankUserId = ?"""
-	c = db.execute(query, [loan.BankUserId])
-	db.commit()
+	c = db.execute(query, [loan.BankUserId]).fetchone()
+	if c == None:
+		raise HTTPException(status_code=404, detail='Account with BankUserId not found')
 
-	account = c.fetchone()
+	accAmount = c[0]
 	
-	depositReq = json.dumps({"amount": account[0], "loan": loan.Amount})
+	depositReq = json.dumps({"amount": accAmount, "loan": loan.Amount})
 	return_code = requests.post("http://localhost:7071/api/Loan_Algorithm", data=depositReq).status_code
 
+	loanId = 0
 	if return_code == 200:
+		# Insert into Loans table
 		query2 = """INSERT INTO Loan (BankUserId, Amount) VALUES (?,?)"""
-		db.execute(query2, [loan.BankUserId, loan.Amount])
+		loanId = db.execute(query2, [loan.BankUserId, loan.Amount]).lastrowid
+
+		# Update current balance (amount += deposit)
+		query3 = """UPDATE Account
+					SET Amount = ?
+					WHERE BankUserId = ?;"""
+		db.execute(query3, [accAmount + loan.Amount, loan.BankUserId])
+
 		db.commit()
 	else:
 		raise HTTPException(status_code=403, detail="Loan greater than 75% of account amount")
-	return "Loan amount: " + str(loan.Amount)
 
-@app.post("/pay-loan/{uid}", status_code=200)
-async def pay_loan(uid: int):
+	returnObj = {
+		'LoanId': loanId,
+		'BankUserId': loan.BankUserId,
+		'LoanAmount': loan.Amount,
+		'CurrentBalance': accAmount
+		}
+	return returnObj
+
+@app.post("/pay-loan/{bankUser_id}/{loan_id}", status_code=200)
+async def pay_loan(bankUser_id: int, loan_id: int):
 	query = """SELECT Loan.Amount AS LoanAmount, Account.Amount AS AccAmount
 				FROM Loan 
 				INNER JOIN Account
 				ON Loan.BankUserId = Account.BankUserId
-				WHERE Loan.BankUserId = ?;"""
-	loanValues = db.execute(query, [uid]).fetchone()
-	db.commit()
+				WHERE Loan.BankUserId = ? AND Loan.Id = ?;"""
+	loanValues = db.execute(query, [bankUser_id, loan_id]).fetchone()
 
 	loanAmount = loanValues[0]
 	accAmount = loanValues[1]
@@ -160,27 +260,32 @@ async def pay_loan(uid: int):
 		accAmount -= loanAmount
 		query2 = """UPDATE Loan
 					SET Amount = 0
-					WHERE BankUserId = ?;"""
-		db.execute(query2, [uid])
+					WHERE BankUserId = ? AND Id = ?;"""
+		db.execute(query2, [bankUser_id, loan_id])
 
 		query3 = """UPDATE Account
 					SET Amount = ?
 					WHERE BankUserId = ?;"""
-		db.execute(query3, [accAmount, uid])
+		db.execute(query3, [accAmount, bankUser_id])
 
 		db.commit()
-	return "Loan Paid"
+
+	returnObj = {
+		'BankUserId': bankUser_id,
+		'PaidAmount': loanAmount,
+		'CurrentBalance': accAmount
+		}
+	return returnObj
 
 @app.get("/list-loans/{uid}", status_code=200)
 async def list_loans(uid: int):
 	#Read all loans
 	query = 'SELECT * FROM Loan WHERE BankUserId = ?'
 	select = db.execute(query, [uid])
-	db.commit()
 
 	loans = []
 	for row in select:
-		loans.append({'BankUserId':row[1], 'CreatedAt':row[2], 'ModifiedAt':row[3], 'Amount':row[4]})
+		loans.append({'Id':row[0], 'BankUserId':row[1], 'CreatedAt':row[2], 'ModifiedAt':row[3], 'Amount':row[4]})
 
 	return loans
 
@@ -189,19 +294,26 @@ async def list_loans(uid: int):
 @app.post("/withdrawal-money", status_code=200)
 async def withdraw_money(withdrawModel: Withdraw):
 	taxMoney = int(withdrawModel.Amount)
-	UserId = int(withdrawModel.UserId)
+	bankUserId = int(withdrawModel.BankUserId)
 
-	query = """SELECT Amount FROM Account WHERE Id = ?"""
-	selectAccountAmount = db.execute(query, [UserId]).fetchone()
+	query = """SELECT Amount FROM Account WHERE BankUserId = ?"""
+	selectAccountAmount = db.execute(query, [bankUserId]).fetchone()
 
-	if (taxMoney > selectAccountAmount[0]):
+	if selectAccountAmount == None:
+		raise HTTPException(status_code=404, detail="Account with BankUserId not found")
+	elif (taxMoney > selectAccountAmount[0]):
 		raise HTTPException(status_code=422, detail="withdraw amount is greater than account amount")
-	
 	else:
-		query2 = 'UPDATE Account SET amount = ? WHERE Id = ?'
-		db.execute(query2, [selectAccountAmount[0] - taxMoney, UserId])
+		query2 = 'UPDATE Account SET amount = ? WHERE BankUserId = ?'
+		db.execute(query2, [selectAccountAmount[0] - taxMoney, bankUserId])
 		db.commit()
-	return "Withdraw: " + str(taxMoney)
+	
+	returnObj = {
+		'BankUserId': bankUserId,
+		'WidthdrawAmount': taxMoney,
+		'CurrentBalance': (selectAccountAmount[0] - taxMoney)
+	}
+	return returnObj
 
 #Start server with uvicorn
 if __name__ == "__main__":
