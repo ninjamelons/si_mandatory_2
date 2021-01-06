@@ -238,18 +238,25 @@ async def create_loan(loan: Loan):
 		'LoanId': loanId,
 		'BankUserId': loan.BankUserId,
 		'LoanAmount': loan.Amount,
-		'CurrentBalance': accAmount
+		'CurrentBalance': (accAmount + loan.Amount)
 		}
 	return returnObj
 
 @app.post("/pay-loan/{bankUser_id}/{loan_id}", status_code=200)
 async def pay_loan(bankUser_id: int, loan_id: int):
+	queryBankUserId = 'SELECT Id FROM BankUserId WHERE Id = ?'
+	bankuserId = db.execute(queryBankUserId, [bankUser_id]).fetchone()
+	if bankUser_id == None:
+		raise HTTPException(status_code=404, detail="BankUser Id not found")
+
 	query = """SELECT Loan.Amount AS LoanAmount, Account.Amount AS AccAmount
 				FROM Loan 
 				INNER JOIN Account
 				ON Loan.BankUserId = Account.BankUserId
 				WHERE Loan.BankUserId = ? AND Loan.Id = ?;"""
 	loanValues = db.execute(query, [bankUser_id, loan_id]).fetchone()
+	if loanValues == None:
+		raise HTTPException(status_code=404, detail="Loan not found; Could be incorrect BankUser_Id or Loan Id")
 
 	loanAmount = loanValues[0]
 	accAmount = loanValues[1]
@@ -266,7 +273,7 @@ async def pay_loan(bankUser_id: int, loan_id: int):
 		query3 = """UPDATE Account
 					SET Amount = ?
 					WHERE BankUserId = ?;"""
-		db.execute(query3, [accAmount, bankUser_id])
+		queryAcc = db.execute(query3, [accAmount, bankUser_id])
 
 		db.commit()
 
@@ -277,11 +284,17 @@ async def pay_loan(bankUser_id: int, loan_id: int):
 		}
 	return returnObj
 
-@app.get("/list-loans/{uid}", status_code=200)
-async def list_loans(uid: int):
+@app.get("/list-loans/{bankUser_id}", status_code=200)
+async def list_loans(bankUser_id: int):
+	# Check that user exists
+	queryBankUserId = 'SELECT Id FROM BankUserId WHERE Id = ?'
+	bankuserId = db.execute(queryBankUserId, [bankUser_id]).fetchone()
+	if bankUser_id == None:
+		raise HTTPException(status_code=404, detail="BankUser Id not found")
+
 	#Read all loans
 	query = 'SELECT * FROM Loan WHERE BankUserId = ?'
-	select = db.execute(query, [uid])
+	select = db.execute(query, [bankUser_id])
 
 	loans = []
 	for row in select:
@@ -293,7 +306,7 @@ async def list_loans(uid: int):
 ## Subtract (if possible) the amount from that users account. Throw an error otherwise.
 @app.post("/withdrawal-money", status_code=200)
 async def withdraw_money(withdrawModel: Withdraw):
-	taxMoney = int(withdrawModel.Amount)
+	withdrawAmount = float(withdrawModel.Amount)
 	bankUserId = int(withdrawModel.BankUserId)
 
 	query = """SELECT Amount FROM Account WHERE BankUserId = ?"""
@@ -301,17 +314,19 @@ async def withdraw_money(withdrawModel: Withdraw):
 
 	if selectAccountAmount == None:
 		raise HTTPException(status_code=404, detail="Account with BankUserId not found")
-	elif (taxMoney > selectAccountAmount[0]):
+	elif (withdrawAmount > selectAccountAmount[0]):
 		raise HTTPException(status_code=422, detail="withdraw amount is greater than account amount")
+	elif (withdrawAmount <= 0):
+		raise HTTPException(status_code=422, detail="withdraw amount needs to be greater than 0")
 	else:
 		query2 = 'UPDATE Account SET amount = ? WHERE BankUserId = ?'
-		db.execute(query2, [selectAccountAmount[0] - taxMoney, bankUserId])
+		db.execute(query2, [selectAccountAmount[0] - withdrawAmount, bankUserId])
 		db.commit()
 	
 	returnObj = {
 		'BankUserId': bankUserId,
-		'WidthdrawAmount': taxMoney,
-		'CurrentBalance': (selectAccountAmount[0] - taxMoney)
+		'WidthdrawAmount': withdrawAmount,
+		'CurrentBalance': (selectAccountAmount[0] - withdrawAmount)
 	}
 	return returnObj
 
