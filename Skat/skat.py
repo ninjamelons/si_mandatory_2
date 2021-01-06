@@ -75,11 +75,13 @@ async def update_skatUser(setActive: int, UserId: int):
 
 	if(select == None):
 		raise HTTPException(status_code=404, detail="The SkatUser does not exist!")
-	else:
+	if((setActive == 1) or (setActive ==0)): 
 		query2 = 'UPDATE SkatUser SET IsActive = ? WHERE UserId = ?'
 		db.execute(query2, [setActive, UserId])
 		db.commit()
 		return read_skatUserFunc(UserId)
+	else:
+		raise HTTPException(status_code=404, detail="The is active can only be a 1 or 0!")
 		
 	
 @app.delete("/skatUser/delete/{skatUse_id}", status_code=200)
