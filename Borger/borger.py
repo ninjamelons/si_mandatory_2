@@ -33,13 +33,12 @@ async def create_borgerUser(borgerUser: BorgerUser):
 		query2 = 'INSERT INTO address (BorgerUserId, Address, IsValid) VALUES (?,?,?)'
 		db.execute(query2, [borgerUser.user_id, "defualt", 1])
 		db.commit()
-		return borgerUser
+		return read_BorgerUserFunc(borgerUser.user_id)
 	if(len(select) > 0):
 		raise HTTPException(status_code=404, detail="The user does already exist!")
 
-@app.get("/borgerUser/read/{user_id}", status_code=200)
-async def read_BorgerUser(user_id: int):
-	#Read from one user with id
+def read_BorgerUserFunc(user_id: int):
+    #Read from one user with id
 	query = 'SELECT * FROM BorgerUser WHERE UserId = ?'
 	select = db.execute(query, [user_id]).fetchone()
 
@@ -48,6 +47,10 @@ async def read_BorgerUser(user_id: int):
 	if(len(select) > 0):
 		borgerUser = {select[0], select[1], select[2]}
 		return borgerUser
+
+@app.get("/borgerUser/read/{user_id}", status_code=200)
+async def read_BorgerUser(user_id: int):
+	return read_BorgerUserFunc(user_id)
 
 @app.get("/borgerUser/readall", status_code=200)
 async def read_users():
@@ -101,16 +104,15 @@ async def create_address(address: Address):
 		
 		#Create address and set it active
 		query2 = 'INSERT INTO Address (BorgerUserId, Address, IsValid) VALUES (?, ?, 1)'
-		db.execute(query2,[address.borger_user_id, address.address])
+		addressInsert = db.execute(query2,[address.borger_user_id, address.address])
+		addressId = addressInsert.lastrowid
 		db.commit()
-		return address
+		return read_addressFunc(addressId)
 	else:
 		raise HTTPException(status_code=400, detail="The UserID was wrong or does not exist!")	
-		
-	
-@app.get("/address/read/{address_id}", status_code=200)
-async def read_address(address_id: int):
-	#Read from one address with id
+
+def read_addressFunc(address_id: int):
+    #Read from one address with id
 	query = 'SELECT * FROM address WHERE Id = ?'
 	select = db.execute(query, [address_id]).fetchone()
 
@@ -118,7 +120,11 @@ async def read_address(address_id: int):
 		raise HTTPException(status_code=404, detail="The address does not exist!")
 	if(len(select) > 0):
 		address = {select[0], select[1], select[2], select[3], select[4]}
-		return address
+		return address		
+	
+@app.get("/address/read/{address_id}", status_code=200)
+async def read_address(address_id: int):
+	return read_addressFunc(address_id)
 
 
 @app.get("/address/readAll", status_code=200)
@@ -140,8 +146,7 @@ async def update_address(address: Address):
 	
 	if(select == None):
 		raise HTTPException(status_code=404, detail="The address does not exist!")
-
-	if(select[0] == address.id):
+	else:
 		#set all address false
 		query2 = 'UPDATE address SET IsValid = 0 WHERE BorgerUserId = ?'
 		db.execute(query2, [address.borger_user_id])
@@ -150,9 +155,8 @@ async def update_address(address: Address):
 		query3 = 'UPDATE address SET Address = ?, IsValid = ? WHERE Id = ?'
 		db.execute(query3, [address.address, 1, address.id])
 		db.commit()
-		return "The address has been updated"
-	else:
-		raise HTTPException(status_code=400, detail="The address does not exist please create one!")
+		return read_addressFunc(address.id)
+	
 	
 @app.delete("/address/delete/{address_id}", status_code=200)
 async def delete_address(address_id: int):
