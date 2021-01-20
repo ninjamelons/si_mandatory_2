@@ -34,43 +34,51 @@ app = FastAPI()
 # User CRUD endpoints
 @app.post("/bankUser/create", status_code=201)
 async def create_bankUser(bankUser: BankUser, account: Account):
-	# Create bankUser
-	query = 'INSERT INTO BankUser (UserId) VALUES (?)'
-	db.execute(query, [bankUser.UserId])
-
-	#get the Id from BankUser to the BankUserId 
-	queryGet = 'SELECT * FROM BankUser WHERE UserId = ?'
-	bu = db.execute(queryGet, [bankUser.UserId]).fetchone()
-	returnBankUser = {
-		'Id':bu[0],
-		'UserId':bu[1],
-		'CreatedAt':bu[2],
-		'ModifiedAt':bu[3]}
-
-	query2 = """INSERT INTO Account 
-				(BankUserId, AccountNo, IsStudent, InterestRate, Amount)
-	            VALUES (?,?,?,?,?)"""
-	accountInsert = db.execute(query2, [bu[0], account.AccountNo, account.IsStudent, account.InterestRate, account.Amount])
-	accountId = accountInsert.lastrowid
-
-	query3 = 'SELECT * FROM Account WHERE Id = ?'
-	acc = db.execute(query3, [accountId]).fetchone()
-	returnAccount = {
-		'Id':acc[0],
-		'BankUserId':acc[1],
-		'AccountNo':acc[2],
-		'IsStudent':acc[3],
-		'CreatedAt':acc[4],
-		'ModifiedAt':acc[5],
-		'InterestRate':acc[6],
-		'Amount':acc[7]
-		}
 	
-	returnUser = {'BankUser':returnBankUser, 'Account':returnAccount}
+	# Check if BankUser with UserID already exist
+	#Read from one user with id
+	query = 'SELECT * FROM BankUser WHERE UserId = ?'
+	select = db.execute(query, [bankUser.UserId]).fetchone()
 
-	db.commit()
+	if(select == None):
+		# Create BankUser
+		query = 'INSERT INTO BankUser (UserId) VALUES (?)'
+		db.execute(query, [bankUser.UserId])
 
-	return returnUser
+		#get the Id from BankUser to the BankUserId 
+		queryGet = 'SELECT * FROM BankUser WHERE UserId = ?'
+		bu = db.execute(queryGet, [bankUser.UserId]).fetchone()
+		returnBankUser = {
+			'Id':bu[0],
+			'UserId':bu[1],
+			'CreatedAt':bu[2],
+			'ModifiedAt':bu[3]}
+
+		query2 = """INSERT INTO Account 
+					(BankUserId, AccountNo, IsStudent, InterestRate, Amount)
+					VALUES (?,?,?,?,?)"""
+		accountInsert = db.execute(query2, [bu[0], account.AccountNo, account.IsStudent, account.InterestRate, account.Amount])
+		accountId = accountInsert.lastrowid
+
+		query3 = 'SELECT * FROM Account WHERE Id = ?'
+		acc = db.execute(query3, [accountId]).fetchone()
+		returnAccount = {
+			'Id':acc[0],
+			'BankUserId':acc[1],
+			'AccountNo':acc[2],
+			'IsStudent':acc[3],
+			'CreatedAt':acc[4],
+			'ModifiedAt':acc[5],
+			'InterestRate':acc[6],
+			'Amount':acc[7]
+			}
+	
+		returnUser = {'BankUser':returnBankUser, 'Account':returnAccount}
+		db.commit()
+		return returnUser
+	if(len(select) > 0):
+		raise HTTPException(status_code=404, detail="The user does already exist!")
+	
 
 @app.get("/bankUser/read/{bankUser_id}", status_code=200)
 async def read_user(bankUser_id: int):
@@ -102,10 +110,12 @@ async def read_users():
 
 @app.delete("/bankUser/delete/{bankUser_id}", status_code=200)
 async def delete_user(bankUser_id: int):
+	#delete with BankUser Id
 	query = 'SELECT * FROM BankUser WHERE Id = ?'
 	bu = db.execute(query, [bankUser_id]).fetchone()
 	if bu == None:
 		raise HTTPException(status_code=404, detail='BankUser with Id not found')
+	
 	returnBankUser = {
 		'Id':bu[0],
 		'UserId':bu[1],

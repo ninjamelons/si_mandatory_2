@@ -88,7 +88,7 @@ async def update_skatUser(setActive: int, UserId: int):
 async def delete_skatuUser(skatUser_id: int):	
 	
 	#Read from one SkatUser with id
-	query = 'SELECT * FROM SkatUser WHERE UserId = ?'
+	query = 'SELECT * FROM SkatUser WHERE Id = ?'
 	select = db.execute(query, [skatUser_id]).fetchone()
 	
 	if(select == None):
@@ -176,7 +176,7 @@ async def delete_skatYear(skatYear_id: int):
 	else:
 		skatUser = {select[0], select[1], select[2], select[3]}
 		
-		query = 'DELETE * FROM SkatYear WHERE Id = ?'
+		query = 'DELETE FROM SkatYear WHERE Id = ?'
 		db.execute(query, [skatYear_id])
 		db.commit()
 		# Delete corresponding SkatUserYear - Cascade is doin' dis for us

@@ -45,7 +45,7 @@ def read_BorgerUserFunc(user_id: int):
 	if(select == None):
 		raise HTTPException(status_code=404, detail="The user does not exist!")
 	if(len(select) > 0):
-		borgerUser = {select[0], select[1], select[2]}
+		borgerUser = {'Id':select[0], 'UserId':select[1], 'CreatedAt':select[2]}
 		return borgerUser
 
 @app.get("/borgerUser/read/{user_id}", status_code=200)
@@ -95,9 +95,11 @@ async def delete_borgerUser(user_id: int):
 async def create_address(address: Address):
 	# Cant create address without user.
 	queryFind = 'SELECT * FROM BorgerUser WHERE UserId = ?'
-	res = db.execute(queryFind, [address.borger_user_id])
+	select = db.execute(queryFind, [address.borger_user_id]).fetchone()
 
-	if(len(res.fetchone()) > 0):
+	if(select == None):
+		raise HTTPException(status_code=400, detail="The UserID was wrong or does not exist!")
+	if(len(select) > 0):
 		#set all address false
 		query = 'UPDATE address SET IsValid = 0 WHERE BorgerUserId = ?'
 		db.execute(query, [address.borger_user_id])
@@ -108,8 +110,7 @@ async def create_address(address: Address):
 		addressId = addressInsert.lastrowid
 		db.commit()
 		return read_addressFunc(addressId)
-	else:
-		raise HTTPException(status_code=400, detail="The UserID was wrong or does not exist!")	
+
 
 def read_addressFunc(address_id: int):
     #Read from one address with id
@@ -119,7 +120,7 @@ def read_addressFunc(address_id: int):
 	if(select == None):
 		raise HTTPException(status_code=404, detail="The address does not exist!")
 	if(len(select) > 0):
-		address = {select[0], select[1], select[2], select[3], select[4]}
+		address = {'Id':select[0], 'BorgerUserId':select[1], 'address':select[2], 'CreatedAt':select[3], 'IsValid':select[4]}
 		return address		
 	
 @app.get("/address/read/{address_id}", status_code=200)
